@@ -1,3 +1,5 @@
+require('dotenv').config(); // Add this line
+
 // Add this near the top with other requires
 const { 
     generateToken, 
@@ -17,8 +19,30 @@ const app = express();
 // Middleware
 app.use(cors());
 app.use(express.json());
+// Serve static files from all necessary directories
 app.use(express.static('public'));
+app.use('/styles', express.static(path.join(__dirname, 'styles')));
+app.use('/scripts', express.static(path.join(__dirname, 'public/scripts')));
+app.use('/images', express.static(path.join(__dirname, 'public/images')));
 
+
+// Serve HTML pages
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.get('/admin', (req, res) => {
+    res.sendFile(path.join(__dirname, 'admin.html'));
+});
+
+app.get('/admin-login', (req, res) => {
+    res.sendFile(path.join(__dirname, 'admin.login.html'));
+});
+
+// Handle SPA routing - serve index.html for all other routes
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
 // ===== AUTHENTICATION LOGGING MIDDLEWARE =====
 
 // Log all authentication attempts
@@ -58,7 +82,7 @@ app.use((req, res, next) => {
         
         if (token) {
             try {
-                const decoded = jwt.verify(token, process.env.JWT_SECRET || 'maher_chinese_admin_secret_key_2024');
+                const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret_key');
                 console.log(`✅ PROTECTED ACCESS - Time: ${timestamp} | IP: ${clientIP} | User: ${decoded.username} | Route: ${req.path} | Method: ${req.method}`);
             } catch (error) {
                 console.log(`❌ INVALID TOKEN - Time: ${timestamp} | IP: ${clientIP} | Route: ${req.path} | Error: ${error.message}`);
@@ -215,7 +239,7 @@ app.use('/api/menu', (req, res, next) => {
         
         if (token) {
             try {
-                const decoded = jwt.verify(token, process.env.JWT_SECRET || 'maher_chinese_admin_secret_key_2024');
+                const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret_key');
                 console.log(`📝 MENU ${req.method} - Time: ${timestamp} | IP: ${clientIP} | User: ${decoded.username} | Route: ${req.path}`);
             } catch (error) {
                 console.log(`📝 MENU ${req.method} ATTEMPT - Time: ${timestamp} | IP: ${clientIP} | Route: ${req.path} | Status: Unauthorized`);
@@ -235,7 +259,7 @@ app.use('/api/orders', (req, res, next) => {
         
         if (token) {
             try {
-                const decoded = jwt.verify(token, process.env.JWT_SECRET || 'maher_chinese_admin_secret_key_2024');
+                const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret_key');
                 console.log(`🗑️ ORDER DELETE - Time: ${timestamp} | IP: ${clientIP} | User: ${decoded.username} | Order ID: ${req.params.id}`);
             } catch (error) {
                 console.log(`🗑️ ORDER DELETE ATTEMPT - Time: ${timestamp} | IP: ${clientIP} | Order ID: ${req.params.id} | Status: Unauthorized`);
@@ -380,7 +404,7 @@ app.delete('/api/menu/:id', (req, res) => {
         const deletedItem = database.menuItems.splice(index, 1)[0];
         saveDatabase();
         
-        console.log('🗑️ MENU ITEM DELETED - Time: ${new Date().toISOString()} | IP: ${req.ip} | Item ID: ${deletedItem.id} | Name: ${deletedItem.name} | Category: ${deletedItem.category}');
+        console.log(`🗑️ MENU ITEM DELETED - Time: ${new Date().toISOString()} | IP: ${req.ip} | Item ID: ${deletedItem.id} | Name: ${deletedItem.name} | Category: ${deletedItem.category}`);
         
         res.json({ 
             success: true, 
@@ -774,10 +798,14 @@ app.get('/api/admin/chart-data', (req, res) => {
     });
 });
 
+// Railway-compatible server configuration
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
+const HOST = process.env.HOST || '0.0.0.0';
+
+app.listen(PORT, HOST, () => {
+    console.log(`🚀 Server running on http://${HOST}:${PORT}`);
     console.log(`📝 Authentication logging enabled`);
-    console.log(`🔐 Admin login available at: http://localhost:3000/admin.login.html`);
+    console.log(`🔐 Admin login available at: /admin-login`);
+    console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
 });
 
