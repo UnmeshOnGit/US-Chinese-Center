@@ -1,13 +1,17 @@
 // auth.js - Authentication middleware and utilities
+require('dotenv').config(); // Add this line
+
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 
-// In a real application, store this securely (environment variable)
-const JWT_SECRET = 'maher_chinese_admin_secret_key_2024';
+// Use environment variables for security
+const JWT_SECRET = process.env.JWT_SECRET || 'maher_chinese_admin_secret_key_2024';
+const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
+const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH || '$2a$10$lf5FrMs6XPI84amlaVXtPuCPk8bcY96lrx/3Qyy3pVX5MCwKeN68G';
+
 const ADMIN_CREDENTIALS = {
-    username: 'admin',
-    // Pre-hashed password for "admin123" - in production, use environment variables
-    password: '$2a$10$lf5FrMs6XPI84amlaVXtPuCPk8bcY96lrx/3Qyy3pVX5MCwKeN68G'
+    username: ADMIN_USERNAME,
+    password: ADMIN_PASSWORD_HASH
 };
 
 // Generate JWT token
